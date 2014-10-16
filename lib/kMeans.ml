@@ -47,7 +47,7 @@ module KMeans (Kp : KMeans_param) (Ka : KMeans_adapter) = struct
       returns k centroids of k clusters *)
   let e_m () =
     let centroids = init () in
-      
+
     let rec iter centroids =
       let n_m = uw (List.zip (List.init k ~f:(fun x -> 0)) centroids) in
       (** clusters is a list with items with form (old_centroid, (n, mean)) where
@@ -56,32 +56,33 @@ module KMeans (Kp : KMeans_param) (Ka : KMeans_adapter) = struct
           compute the new mean once a new entity is assigned to this cluster*)
       let clusters = uw (List.zip centroids n_m) in
       let new_clusters = fold_all ~init:clusters
-                                  ~f:(fun a e ->
-                                    let e_c,_ = List.fold centroids
-                                                  ~init:(uw (List.hd centroids), (dis (uw (List.hd centroids)) e))
-                                                  ~f:(fun a c ->
-                                                      let _, d = a in
-                                                      if dis c e < d then
-                                                        c, (dis c e)
-                                                      else
-                                                        a) in
-                                    List.map a ~f:(fun c ->
-                                                     let ct, m = c in
-                                                     if ct = e_c then
-                                                       ct,(update_mean m e)
-                                                     else
-                                                       c)) in
+          ~f:(fun a e ->
+              let e_c,_ = List.fold centroids
+                  ~init:(uw (List.hd centroids), (dis (uw (List.hd centroids)) e))
+                  ~f:(fun a c ->
+                      let _, d = a in
+                      if dis c e < d then
+                        c, (dis c e)
+                      else
+                        a) in
+              List.map a ~f:(fun c ->
+                  let ct, m = c in
+                  if ct = e_c then
+                    ct,(update_mean m e)
+                  else
+                    c)) in
 
       let old, ne = List.unzip new_clusters in
       let _, ne = List.unzip ne in
       let o_n = uw (List.zip old ne) in
-      if (List.fold o_n ~init:true ~f:(fun a x ->
-                                         let o,n = x in
-                                         if not a then false
-                                         else if Ka.nearly_same o n then
-                                           true
-                                         else
-                                           false)) then
+      if (List.fold o_n ~init:true
+            ~f:(fun a x ->
+                let o,n = x in
+                if not a then false
+                else if Ka.nearly_same o n then
+                  true
+                else
+                  false)) then
         ne
       else
         iter ne
